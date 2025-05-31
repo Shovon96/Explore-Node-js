@@ -7,8 +7,11 @@ const dataFilePath = path.join(__dirname, './todoData.json');
 
 const server = http.createServer((req, res) => {
 
+    const url = new URL(req.url, `http://${req.headers.host}`)
+    const pathName = url.pathname;
+
     // Get All Todos data
-    if (req.url === '/all-todos' && req.method === 'GET') {
+    if (pathName === '/all-todos' && req.method === 'GET') {
         const data = fs.readFileSync(dataFilePath, { encoding: 'utf-8' });
         res.writeHead(200, {
             "content-type": "application/json",
@@ -18,7 +21,7 @@ const server = http.createServer((req, res) => {
     }
 
     // Post or create a Todo
-    else if (req.url === '/create-todo' && req.method === 'POST') {
+    else if (pathName === '/create-todo' && req.method === 'POST') {
 
         let data = ""
         req.on("data", (chunk) => {
@@ -42,6 +45,23 @@ const server = http.createServer((req, res) => {
         })
 
         res.end("ToDo Created Successfully");
+    }
+
+    // Get Single Data by Title.
+    else if (pathName === '/todo' && req.method === 'GET'){
+        const title = url.searchParams.get("title");
+        const data = fs.readFileSync(dataFilePath, { encoding: 'utf-8' });
+        const parsedData = JSON.parse(data);
+
+        const todo = parsedData.find((todo) => todo.title === title);
+        const stringifiedTodo = JSON.stringify(todo);
+
+        res.writeHead(200, {
+            "content-type": "application/json",
+        });
+
+        res.end(stringifiedTodo);
+        // res.end('single data finding...')
     }
     else {
         res.end("404: Route Not Found");
