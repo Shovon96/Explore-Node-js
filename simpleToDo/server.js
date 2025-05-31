@@ -32,23 +32,23 @@ const server = http.createServer((req, res) => {
         req.on("end", () => {
             console.log(data);
             const { title, body } = JSON.parse(data);
-            
+
             const createdAt = new Date().toLocaleString();
 
-            const allTodos = fs.readFileSync(dataFilePath, {encoding: 'utf-8'});
+            const allTodos = fs.readFileSync(dataFilePath, { encoding: 'utf-8' });
             const parsedAllTodos = JSON.parse(allTodos);
 
-            parsedAllTodos.push({title, body, createdAt});
-            fs.writeFileSync(dataFilePath, JSON.stringify(parsedAllTodos, null, 2), {encoding: 'utf-8'});
+            parsedAllTodos.push({ title, body, createdAt });
+            fs.writeFileSync(dataFilePath, JSON.stringify(parsedAllTodos, null, 2), { encoding: 'utf-8' });
 
-            res.end(JSON.stringify({title, body, createdAt}, null, 2))
+            res.end(JSON.stringify({ title, body, createdAt }, null, 2))
         })
 
         res.end("ToDo Created Successfully");
     }
 
     // Get Single Data by Title.
-    else if (pathName === '/todo' && req.method === 'GET'){
+    else if (pathName === '/todo' && req.method === 'GET') {
         const title = url.searchParams.get("title");
         const data = fs.readFileSync(dataFilePath, { encoding: 'utf-8' });
         const parsedData = JSON.parse(data);
@@ -63,6 +63,37 @@ const server = http.createServer((req, res) => {
         res.end(stringifiedTodo);
         // res.end('single data finding...')
     }
+
+    // Update a Todo body
+    else if (pathName === '/update-todo' && req.method === 'PATCH') {
+        const title = url.searchParams.get("title");
+
+        let data = ""
+        req.on("data", (chunk) => {
+            data = data + chunk;
+        });
+
+
+        req.on("end", () => {
+            const { body } = JSON.parse(data);
+
+            // const createdAt = new Date().toLocaleString();
+
+            const allTodos = fs.readFileSync(dataFilePath, { encoding: 'utf-8' });
+            const parsedAllTodos = JSON.parse(allTodos);
+
+            const todoIndex = parsedAllTodos.findIndex((todo) => todo.title === title);
+
+            parsedAllTodos[todoIndex].body = body
+
+            fs.writeFileSync(dataFilePath, JSON.stringify(parsedAllTodos, null, 2), { encoding: 'utf-8' });
+
+            res.end(JSON.stringify({ title, body, createdAt: parsedAllTodos[todoIndex].createdAt }, null, 2))
+        })
+
+        res.end("ToDo Updated Successfully");
+    }
+    
     else {
         res.end("404: Route Not Found");
     }
